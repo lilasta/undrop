@@ -3,14 +3,16 @@
 use core::ops::{Deref, DerefMut};
 
 #[repr(transparent)]
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Default, Debug)]
-pub struct Undroppable<T>(T);
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Undroppable<T: ?Sized>(T);
 
 impl<T> Undroppable<T> {
-    const PANIC: () = panic!("Undroppable!");
-
     pub const fn new(value: T) -> Self {
         Self(value)
+    }
+
+    pub fn drop(this: Self) {
+        drop(Self::into_inner(this))
     }
 
     pub const fn forget(this: Self) {
@@ -28,7 +30,7 @@ impl<T> Undroppable<T> {
     }
 }
 
-impl<T> Deref for Undroppable<T> {
+impl<T: ?Sized> Deref for Undroppable<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -36,14 +38,20 @@ impl<T> Deref for Undroppable<T> {
     }
 }
 
-impl<T> DerefMut for Undroppable<T> {
+impl<T: ?Sized> DerefMut for Undroppable<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl<T> Drop for Undroppable<T> {
+struct Panic<T: ?Sized>(T);
+
+impl<T: ?Sized> Panic<T> {
+    const PANIC: () = panic!("Undroppable!");
+}
+
+impl<T: ?Sized> Drop for Undroppable<T> {
     fn drop(&mut self) {
-        Self::PANIC
+        Panic::<T>::PANIC
     }
 }
