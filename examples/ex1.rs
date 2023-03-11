@@ -13,4 +13,8 @@ impl Drop for Struct {
 fn main() {
     let undrop = Undroppable::new(Struct);
     Undroppable::drop(undrop);
+
+    let undrop = Undroppable::new(Struct);
+    let value = Undroppable::into_inner(undrop);
+    drop(value);
 }

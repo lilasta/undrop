@@ -39,16 +39,10 @@ impl<T> Undroppable<T> {
 
     /// Extracts the inner value from the `Undroppable` container.
     #[inline(always)]
-    pub fn into_inner(mut this: Self) -> T {
-        let inner = unsafe { Self::take(&mut this) };
+    pub fn into_inner(this: Self) -> T {
+        let inner_ptr = core::ptr::addr_of!(this.0);
         Self::forget(this);
-        inner
-    }
-
-    /// Extracts the inner value from the `Undroppable` container without dropping the container.
-    #[inline(always)]
-    pub unsafe fn take(this: &mut Self) -> T {
-        core::ptr::read(&this.0)
+        unsafe { core::ptr::read(inner_ptr) }
     }
 }
 
