@@ -11,6 +11,10 @@ use core::ops::{Deref, DerefMut};
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Undroppable<T: ?Sized>(T);
 
+impl<T: ?Sized> Undroppable<T> {
+    const PANIC: () = panic!("Undroppable!");
+}
+
 impl<T> Undroppable<T> {
     /// Wrap a value in `Undroppable`.
     #[inline(always)]
@@ -21,8 +25,9 @@ impl<T> Undroppable<T> {
     /// Drop the inner value explicitly.
     #[inline(always)]
     pub fn drop(mut this: Self) {
-        unsafe { core::ptr::drop_in_place(&mut this.0) };
+        let inner_ptr = core::ptr::addr_of_mut!(this.0);
         core::mem::forget(this);
+        unsafe { core::ptr::drop_in_place(inner_ptr) };
     }
 
     /// Forget the inner value explicitly.
@@ -65,12 +70,6 @@ impl<T: ?Sized> DerefMut for Undroppable<T> {
 
 impl<T: ?Sized> Drop for Undroppable<T> {
     fn drop(&mut self) {
-        struct Panic<T: ?Sized>(T);
-
-        impl<T: ?Sized> Panic<T> {
-            const PANIC: () = Panic::<T>::PANIC;
-        }
-
-        Panic::<T>::PANIC
+        Self::PANIC
     }
 }
